@@ -42,6 +42,11 @@ const curl = `stellar contract invoke --network testnet --send=no \\
   is_covered --sac ${TESTNET.assets.PUSD?.sac} \\
   --min_bps 10000 --max_age 604800 --min_tier 2`;
 
+const example = TESTNET.assets.PUSD;
+const assetLinks = example
+  ? `/asset/?asset=${example.code}:${example.issuer}\n/asset/?sac=${example.sac}`
+  : "/asset/";
+
 export default function IntegratePage() {
   return (
     <>
@@ -124,6 +129,17 @@ export default function IntegratePage() {
       <h2>From the command line</h2>
       <pre>
         <code>{curl}</code>
+      </pre>
+
+      <h2>Opening an asset in the app</h2>
+      <p className="sub">
+        The asset page accepts either form below. A <code>CODE:ISSUER</code> link is validated and
+        turned into its SAC with <code>sacAddress(code, issuer, networkPassphrase)</code> from{" "}
+        <code>@plimsoll/sdk</code>, so a typo gives a clear message instead of a contract error.
+        Both forms open the same asset.
+      </p>
+      <pre>
+        <code>{assetLinks}</code>
       </pre>
 
       <h2>Testnet addresses</h2>

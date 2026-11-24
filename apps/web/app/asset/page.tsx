@@ -29,6 +29,7 @@ import {
   ratioText,
   statusOf,
 } from "@/components/ui";
+import { assetFromSearch } from "@/lib/asset-query";
 import { config, explorer } from "@/lib/config";
 import {
   contracts,
@@ -56,7 +57,8 @@ export default function AssetPage() {
 }
 
 function AssetDetail() {
-  const sac = useSearchParams().get("sac") ?? "";
+  const query = assetFromSearch(useSearchParams().toString(), config.network.networkPassphrase);
+  const sac = query.ok ? query.sac : "";
   const [asset, setAsset] = useState<AssetView | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(nowSecs());
@@ -82,11 +84,23 @@ function AssetDetail() {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, [sac]);
 
-  if (!sac) {
+  if (!query.ok) {
     return (
-      <p className="notice notice-info">
-        No asset selected. <Link href="/">Back to all assets</Link>.
-      </p>
+      <section className="card mt" aria-labelledby="asset-query-heading">
+        <div className="eyebrow">Asset link</div>
+        <h1 id="asset-query-heading">
+          {query.missing ? "No asset selected" : "That asset link is not valid"}
+        </h1>
+        <p className={`notice ${query.missing ? "notice-info" : "notice-bad"}`} role="alert">
+          {query.error}
+        </p>
+        <p className="sub">
+          Open an asset with <code>?asset=CODE:ISSUER</code> or <code>?sac=C...</code>.
+        </p>
+        <p>
+          <Link href="/">Back to all assets</Link>
+        </p>
+      </section>
     );
   }
   if (error)

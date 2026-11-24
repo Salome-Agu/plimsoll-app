@@ -779,3 +779,23 @@ pre {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Print utilities */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  /* Hide global chrome when printing */
+  body > header,
+  body > footer,
+  nav {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 11pt;
+  }
+}
