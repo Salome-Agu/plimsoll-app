@@ -39,6 +39,13 @@ import {
   type Origin,
   type ReportView,
 } from "@/lib/data";
+import {
+  addWatch,
+  isWatching,
+  notifyIfUnder,
+  removeWatch,
+  requestNotificationPermission,
+} from "@/lib/watchlist";
 
 export default function AssetPage() {
   return (
@@ -117,6 +124,7 @@ function AssetDetail() {
           History
         </Link>
       </p>
+      <WatchButton sac={asset.sac} code={asset.code} bps={c?.bps} status={status} />
       <div className="spread">
         <div>
           <h1 style={{ marginBottom: 4 }}>{asset.code}</h1>
@@ -669,5 +677,56 @@ function IssuerToml({ asset }: { asset: AssetView }) {
         {cached ? "Read by the Plimsoll indexer." : "Checked live from your browser."}
       </p>
     </div>
+  );
+}
+
+// ---- Watchlist ---------------------------------------------------------------
+
+interface WatchButtonProps {
+  sac: string;
+  code: string;
+  bps: number | undefined;
+  status: ReturnType<typeof statusOf>;
+}
+
+/**
+ * A toggle button that adds/removes the asset from the browser-local watchlist
+ * and fires a Notification API alert when coverage drops below the threshold.
+ */
+function WatchButton({ sac, code, bps, status }: WatchButtonProps) {
+  const [watching, setWatching] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return isWatching(sac);
+  });
+
+  const toggle = useCallback(async () => {
+    if (watching) {
+      removeWatch(sac);
+      setWatching(false);
+    } else {
+      const granted = await requestNotificationPermission();
+      addWatch({ sac, code, thresholdBps: 10_000 });
+      setWatching(true);
+      if (granted && bps != null) {
+        notifyIfUnder(sac, code, bps, status);
+      }
+    }
+  }, [watching, sac, code, bps, status]);
+
+  return (
+    <button
+      type="button"
+      className="secondary"
+      onClick={() => void toggle()}
+      aria-pressed={watching}
+      style={{ marginBottom: 8 }}
+      title={
+        watching
+          ? "Remove from watchlist"
+          : "Watch this asset — get a browser notification when coverage drops below 100%"
+      }
+    >
+      {watching ? "★ Watching" : "☆ Watch"}
+    </button>
   );
 }
